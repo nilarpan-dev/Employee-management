@@ -1,0 +1,51 @@
+services:
+  mongodb:
+    image: mongo:7.0
+    container_name: employee_mongodb
+    restart: always
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - app_network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: employee_backend
+    restart: always
+    ports:
+      - "8080:8080"
+    environment:
+      - PORT=8080
+      - MONGODB_URI=mongodb://mongodb:27017
+      - MONGODB_DATABASE=employee_management
+      - ALLOWED_ORIGIN=*
+    depends_on:
+      - mongodb
+    networks:
+      - app_network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:8080}
+    container_name: employee_frontend
+    restart: always
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    networks:
+      - app_network
+
+volumes:
+  mongo_data:
+
+networks:
+  app_network:
+    driver: bridge
